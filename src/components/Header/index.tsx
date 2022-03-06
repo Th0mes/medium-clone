@@ -3,7 +3,7 @@ import { Link } from '@components'
 
 export const Header = () => {
 	return (
-		<header className="flex items-center justify-between py-5 max-w-screen-xl mx-auto">
+		<header className="wrapper py-5">
 			<div className="flex items-center space-x-5">
 				<Link to="/" className="w-48 object-contain">
 					<Image

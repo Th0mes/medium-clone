@@ -1,11 +1,19 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import Image from 'next/image'
-import { Header } from '@components'
+import { Header, Link } from '@components'
+import { sanityClient } from '@lib/sanity.server'
+import { Post } from 'src/@types/post'
+import { urlFor } from '@lib/sanity'
 
-const Home: NextPage = () => {
+type HomeProps = {
+	posts: [Post]
+}
+
+const Home: NextPage<HomeProps> = ({ posts }: HomeProps) => {
+	console.log(posts)
 	return (
-		<div>
+		<>
 			<Head>
 				<title>Medium</title>
 				<meta
@@ -14,8 +22,10 @@ const Home: NextPage = () => {
 				/>
 				<link rel="icon" href="/favicon.ico" />
 			</Head>
+
 			<Header />
-			<div className="w-screen bg-yellow-400 border-y border-black py-10 lg:py-4">
+
+			<section className="w-screen bg-yellow-400 border-y border-black py-10 lg:py-4">
 				<div className="flex justify-between items-center max-w-screen-xl mx-auto">
 					<div className="px-10 space-y-5">
 						<h1 className="text-6xl max-w-xl font-serif">
@@ -31,9 +41,68 @@ const Home: NextPage = () => {
 						<Image src={'/medium-logo.png'} alt="Medium logo" layout="fill" />
 					</div>
 				</div>
-			</div>
-		</div>
+			</section>
+
+			<section className="wrapper">
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 p-2 md:p-6">
+					{posts.map((post) => (
+						<Link to={`/post/${post.slug.current}`} key={post._id}>
+							<div className="border rounded-xl group overflow-hidden">
+								<div className="flex">
+									<Image
+										src={urlFor(post.mainImage).url()}
+										alt={post.slug.current}
+										width={750}
+										height={500}
+										objectFit="cover"
+										className="group-hover:scale-105"
+									/>
+								</div>
+								<div className="flex justify-between p-4 items-center bg-slate-100">
+									<div>
+										<p className="text-lg font-bold">{post.title}</p>
+										<p className="text-xs">
+											{post.description} by {post.author.name}
+										</p>
+									</div>
+									<Image
+										src={urlFor(post.author.image).url()}
+										alt={`${post.author.name} avatar`}
+										width={48}
+										height={48}
+										objectFit="cover"
+										className="rounded-full"
+									/>
+								</div>
+							</div>
+						</Link>
+					))}
+				</div>
+			</section>
+		</>
 	)
 }
 
 export default Home
+
+export const getServerSideProps = async () => {
+	const query = `*[_type == 'post'] {
+  _id,
+  title,
+  author -> {
+    name,
+    image
+  },
+  description,
+  mainImage,
+  slug
+}`
+
+	const posts = await sanityClient.fetch(query)
+
+	return {
+		props: {
+			posts,
+		},
+	}
+}
